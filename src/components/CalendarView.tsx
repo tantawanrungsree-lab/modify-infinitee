@@ -75,6 +75,13 @@ const STATUS_COLOR_MAP: Record<JobStatus, { bg: string; text: string; border: st
   }
 };
 
+const formatLocalDate = (date: Date): string => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
 export const CalendarView: React.FC<CalendarViewProps> = ({
   jobs,
   urgentAlerts,
@@ -85,10 +92,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   onOpenSheetsSync
 }) => {
   const today = useMemo(() => new Date(), []);
+  const todayStr = useMemo(() => formatLocalDate(today), [today]);
   const [currentYear, setCurrentYear] = useState<number>(today.getFullYear());
   const [currentMonth, setCurrentMonth] = useState<number>(today.getMonth());
   const [selectedDateStr, setSelectedDateStr] = useState<string>(() => {
-    return today.toISOString().split('T')[0];
+    return formatLocalDate(today);
   });
   
   // Filters
@@ -121,7 +129,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     const now = new Date();
     setCurrentYear(now.getFullYear());
     setCurrentMonth(now.getMonth());
-    setSelectedDateStr(now.toISOString().split('T')[0]);
+    setSelectedDateStr(formatLocalDate(now));
   };
 
   // Filtered jobs based on filters and search
@@ -180,30 +188,26 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     for (let i = startDayOfWeek - 1; i >= 0; i--) {
       const dayNum = prevMonthLastDay - i;
       const prevDate = new Date(currentYear, currentMonth - 1, dayNum);
-      const dateStr = prevDate.toISOString().split('T')[0];
+      const dateStr = formatLocalDate(prevDate);
       days.push({
         date: prevDate,
         dateStr,
         dayNum,
         isCurrentMonth: false,
-        isToday: dateStr === today.toISOString().split('T')[0]
+        isToday: dateStr === todayStr
       });
     }
 
     // Days in current month
     for (let d = 1; d <= daysInMonth; d++) {
       const dateObj = new Date(currentYear, currentMonth, d);
-      // Format YYYY-MM-DD cleanly using local numbers
-      const y = dateObj.getFullYear();
-      const m = String(dateObj.getMonth() + 1).padStart(2, '0');
-      const dayPadded = String(d).padStart(2, '0');
-      const dateStr = `${y}-${m}-${dayPadded}`;
+      const dateStr = formatLocalDate(dateObj);
       days.push({
         date: dateObj,
         dateStr,
         dayNum: d,
         isCurrentMonth: true,
-        isToday: dateStr === today.toISOString().split('T')[0]
+        isToday: dateStr === todayStr
       });
     }
 
@@ -212,18 +216,18 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     const remaining = totalSlots - days.length;
     for (let n = 1; n <= remaining; n++) {
       const nextDate = new Date(currentYear, currentMonth + 1, n);
-      const dateStr = nextDate.toISOString().split('T')[0];
+      const dateStr = formatLocalDate(nextDate);
       days.push({
         date: nextDate,
         dateStr,
         dayNum: n,
         isCurrentMonth: false,
-        isToday: dateStr === today.toISOString().split('T')[0]
+        isToday: dateStr === todayStr
       });
     }
 
     return days;
-  }, [currentYear, currentMonth, today]);
+  }, [currentYear, currentMonth, todayStr]);
 
   // Selected date jobs list
   const selectedDateJobs = useMemo(() => {
@@ -493,7 +497,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
             {/* Calendar Days Matrix */}
             <div className="grid grid-cols-7 gap-1 sm:gap-2 flex-1 auto-rows-fr">
-              {calendarGrid.map((dayItem) => {
+              {calendarGrid.map((dayItem, idx) => {
                 const dayJobs = jobsByDate.get(dayItem.dateStr) || [];
                 const isSelected = selectedDateStr === dayItem.dateStr;
                 const hasJobs = dayJobs.length > 0;
@@ -501,7 +505,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
                 return (
                   <div
-                    key={dayItem.dateStr}
+                    key={`cal-day-box-${dayItem.dateStr}-${dayItem.isCurrentMonth ? 'curr' : 'ext'}-${idx}`}
                     onClick={() => setSelectedDateStr(dayItem.dateStr)}
                     className={`min-h-[90px] sm:min-h-[110px] p-1 sm:p-2 rounded-xl border flex flex-col justify-between transition-all cursor-pointer relative overflow-hidden group ${
                       isSelected
@@ -589,9 +593,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             {Array.from(jobsByDate.entries())
               .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
               .map(([dateKey, dateJobsList]) => {
-                const dateObj = new Date(dateKey);
-                const dayOfWeek = DAY_NAMES_FULL_TH[dateObj.getDay()];
-                const isTodayDate = dateKey === today.toISOString().split('T')[0];
+                const parts = dateKey.split('-').map(Number);
+                const dateObj = parts.length === 3 ? new Date(parts[0], parts[1] - 1, parts[2]) : new Date(dateKey);
+                const dayOfWeek = DAY_NAMES_FULL_TH[dateObj.getDay()] || '';
+                const isTodayDate = dateKey === todayStr;
 
                 return (
                   <div

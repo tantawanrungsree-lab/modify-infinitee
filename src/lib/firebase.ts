@@ -108,3 +108,14 @@ export async function logoutUser(): Promise<void> {
     console.error('Logout error:', error);
   }
 }
+
+export async function saveUserProfile(userProfile: UserProfile): Promise<void> {
+  try {
+    await setDoc(doc(db, 'users', userProfile.uid), {
+      ...userProfile,
+      lastLoginAt: new Date().toISOString()
+    }, { merge: true });
+  } catch (err) {
+    console.warn('Failed to save user profile to Firestore:', err);
+  }
+}

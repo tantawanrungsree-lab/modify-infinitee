@@ -12,7 +12,7 @@ import { LeadTimeCalculatorModal } from './components/LeadTimeCalculatorModal';
 import { CalendarView } from './components/CalendarView';
 import { ModifyJob, ActiveView, JobCategory, JobStatus, UserProfile, DeadlineAlertItem, CATEGORY_CONFIG } from './types';
 import { INITIAL_SAMPLE_JOBS } from './lib/sampleData';
-import { db, auth, logoutUser, testFirestoreConnection } from './lib/firebase';
+import { db, auth, logoutUser, testFirestoreConnection, saveUserProfile } from './lib/firebase';
 import { collection, onSnapshot, doc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 
@@ -82,14 +82,16 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
       if (fbUser) {
-        setUser({
+        const profile: UserProfile = {
           uid: fbUser.uid,
           displayName: fbUser.displayName || 'Staff Member',
           email: fbUser.email || 'staff@lumencraft.co.th',
           photoURL: fbUser.photoURL || undefined,
           role: 'Admin / Engineer',
           department: 'Modify Process Engineering'
-        });
+        };
+        setUser(profile);
+        saveUserProfile(profile);
       }
     });
 
