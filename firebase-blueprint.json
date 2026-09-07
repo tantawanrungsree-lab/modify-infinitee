@@ -1,0 +1,62 @@
+{
+  "entities": {
+    "Job": {
+      "title": "ModifyJob",
+      "description": "Modification job record for BRZ LUMENCRAFT with primary keys projectCode, projectName, and soNo",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique Firestore document ID" },
+        "seqNo": { "type": "number", "description": "ลำดับที่ Sequence number" },
+        "ecrNo": { "type": "string", "description": "ECR No. Engineering Change Request Number" },
+        "salesOwner": { "type": "string", "description": "เซลล์เจ้าของงาน Sales owner" },
+        "storeRequester": { "type": "string", "description": "สโตร์ผู้ร้องขอ Store requester" },
+        "soNo": { "type": "string", "description": "SO No. Sales Order number (part of Primary Key)" },
+        "projectCode": { "type": "string", "description": "Project code (part of Primary Key)" },
+        "projectName": { "type": "string", "description": "Project name (part of Primary Key)" },
+        "customerName": { "type": "string", "description": "ชื่อลูกค้า Customer name" },
+        "jobDescription": { "type": "string", "description": "รายละเอียดงาน Work description" },
+        "receivedDate": { "type": "string", "description": "วันที่รับงาน Received date (YYYY-MM-DD)" },
+        "shipmentDate": { "type": "string", "description": "Shipment date (YYYY-MM-DD)" },
+        "estimatedDate": { "type": "string", "description": "วันที่ประมาณการ Estimated date (YYYY-MM-DD)" },
+        "status": { "type": "string", "description": "Status งาน Job status: 'รอดำเนินการ' | 'กำลังดำเนินการ' | 'รอตรวจรับ' | 'เสร็จสิ้น' | 'ยกเลิก'" },
+        "technician": { "type": "string", "description": "ช่างที่ทำ / ช่างผู้รับผิดชอบ Assigned technician" },
+        "category": { "type": "string", "description": "ประเภทงาน: 'modify_general' | 'paint' | 'custom_fabrication'" },
+        "laborCost": { "type": "number", "description": "ค่าแรง Labor cost" },
+        "materialCost": { "type": "number", "description": "ค่าวัสดุ/อุปกรณ์ Material cost" },
+        "totalCost": { "type": "number", "description": "ค่าใช้จ่ายรวม Total cost" },
+        "notes": { "type": "string", "description": "หมายเหตุเพิ่มเติม Additional notes" },
+        "createdBy": { "type": "string", "description": "User UID who created the job" },
+        "createdByName": { "type": "string", "description": "User display name" },
+        "createdByEmail": { "type": "string", "description": "User email" },
+        "createdAt": { "type": "string", "description": "Creation timestamp ISO string" },
+        "updatedAt": { "type": "string", "description": "Update timestamp ISO string" }
+      },
+      "required": ["soNo", "projectCode", "projectName", "customerName", "category", "status", "receivedDate", "shipmentDate"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile representation for staff and technicians",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "User UID" },
+        "displayName": { "type": "string", "description": "Display name" },
+        "email": { "type": "string", "description": "User email" },
+        "photoURL": { "type": "string", "description": "Avatar URL" },
+        "role": { "type": "string", "description": "User role" },
+        "department": { "type": "string", "description": "Department: Production, Sales, Store, Quality, Engineering" },
+        "lastLoginAt": { "type": "string", "description": "Last login timestamp" }
+      },
+      "required": ["uid", "email"]
+    }
+  },
+  "firestore": {
+    "/jobs/{jobId}": {
+      "schema": { "$ref": "#/entities/Job" },
+      "description": "Collection of all modification process jobs across BRZ LUMENCRAFT categories"
+    },
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "User profiles for authenticated staff members"
+    }
+  }
+}

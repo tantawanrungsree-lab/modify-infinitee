@@ -1,0 +1,6 @@
+{
+  "name": "Modify Process BRZ LUMENCRAFT",
+  "description": "ระบบจัดการกระบวนการ Modify งาน สำหรับ BRZ LUMENCRAFT ครอบคลุมงาน Modify ทั่วไป, งานพ่นสี, งานประยุกต์ประดิษฐ์ สรุปค่าใช้จ่าย แจ้งเตือนก่อนกำหนด 1 วัน ซิงค์ Google Sheets และเชื่อมต่อ Firebase",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,43 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidJob(data) {
+      return data.keys().hasAll(['soNo', 'projectCode', 'projectName', 'customerName', 'category', 'status', 'receivedDate', 'shipmentDate'])
+        && data.soNo is string && data.soNo.size() <= 100
+        && data.projectCode is string && data.projectCode.size() <= 100
+        && data.projectName is string && data.projectName.size() <= 200
+        && data.customerName is string && data.customerName.size() <= 200
+        && data.category is string && data.category.size() <= 50
+        && data.status is string && data.status.size() <= 50
+        && data.receivedDate is string && data.receivedDate.size() <= 30
+        && data.shipmentDate is string && data.shipmentDate.size() <= 30;
+    }
+
+    // Jobs Collection
+    match /jobs/{jobId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(jobId) && isValidJob(request.resource.data);
+      allow update: if isSignedIn() && isValidId(jobId) && isValidJob(request.resource.data);
+      allow delete: if isSignedIn() && isValidId(jobId);
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && request.auth.uid == userId;
+    }
+  }
+}
