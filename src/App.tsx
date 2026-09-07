@@ -13,7 +13,7 @@ import { CalendarView } from './components/CalendarView';
 import { ModifyJob, ActiveView, JobCategory, JobStatus, UserProfile, DeadlineAlertItem, CATEGORY_CONFIG } from './types';
 import { INITIAL_SAMPLE_JOBS } from './lib/sampleData';
 import { db, auth, logoutUser, testFirestoreConnection, saveUserProfile } from './lib/firebase';
-import { collection, onSnapshot, doc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { collection, onSnapshot, doc, setDoc, deleteDoc, updateDoc, getDocs } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 
 const STORAGE_KEY = 'BRZ_LUMENCRAFT_JOBS_V2';
@@ -102,11 +102,12 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // Firestore Realtime Listener
+  // Firestore Realtime Listener (Syncs all Gmail accounts in real time)
   useEffect(() => {
+    let unsubscribe: () => void = () => {};
     try {
       const jobsCol = collection(db, 'jobs');
-      const unsubscribe = onSnapshot(jobsCol, (snapshot) => {
+      unsubscribe = onSnapshot(jobsCol, async (snapshot) => {
         if (!snapshot.empty) {
           const remoteJobs: ModifyJob[] = [];
           snapshot.forEach((docSnap) => {
@@ -116,15 +117,26 @@ export default function App() {
           remoteJobs.sort((a, b) => a.seqNo - b.seqNo);
           setJobs(remoteJobs);
           setFirebaseOnline(true);
+        } else {
+          // If Firestore jobs collection is empty in project "modify infinite", seed initial jobs
+          console.log('Seeding initial jobs to Firestore (modify infinite)...');
+          try {
+            for (const sampleJob of INITIAL_SAMPLE_JOBS) {
+              await setDoc(doc(db, 'jobs', sampleJob.id), sampleJob);
+            }
+          } catch (seedErr) {
+            console.warn('Seeding notice:', seedErr);
+          }
+          setFirebaseOnline(true);
         }
       }, (err) => {
         console.warn('Firestore offline / cached mode active:', err.message);
       });
-
-      return () => unsubscribe();
     } catch (e) {
       console.warn('Using local persistence engine:', e);
     }
+
+    return () => unsubscribe();
   }, []);
 
   // 1-Day Advance Deadline Alert Calculation
@@ -199,6 +211,9 @@ export default function App() {
         ...jobData,
         attachments: shouldClearAttachments ? [] : (jobData.attachments ?? []),
         id: newId,
+        createdBy: user?.uid,
+        createdByName: user?.displayName,
+        createdByEmail: user?.email,
         createdAt: now,
         updatedAt: now,
       };
@@ -273,9 +288,24 @@ export default function App() {
     setIsNewJobModalOpen(true);
   };
 
-  const handleManualSync = () => {
+  const handleManualSync = async () => {
     setIsSyncing(true);
-    setTimeout(() => setIsSyncing(false), 1000);
+    try {
+      const snapshot = await getDocs(collection(db, 'jobs'));
+      if (!snapshot.empty) {
+        const remoteJobs: ModifyJob[] = [];
+        snapshot.forEach((docSnap) => {
+          remoteJobs.push({ id: docSnap.id, ...docSnap.data() } as ModifyJob);
+        });
+        remoteJobs.sort((a, b) => a.seqNo - b.seqNo);
+        setJobs(remoteJobs);
+        setFirebaseOnline(true);
+      }
+    } catch (err) {
+      console.warn('Manual sync check:', err);
+    } finally {
+      setTimeout(() => setIsSyncing(false), 600);
+    }
   };
 
   const handleLogout = async () => {

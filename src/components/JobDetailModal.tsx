@@ -315,6 +315,20 @@ Project Code: ${job.projectCode} | Project Name: ${job.projectName}
             )}
           </div>
 
+          {/* Creator and Firestore Sync Information */}
+          <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-400">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>ผู้บันทึกข้อมูล:</span>
+              <strong className="text-slate-200">
+                {job.createdByEmail || job.createdByName || 'ระบบส่วนกลาง BRZ'}
+              </strong>
+            </div>
+            <div className="text-[11px] font-mono text-slate-400">
+              อัปเดตล่าสุด: {new Date(job.updatedAt || job.createdAt).toLocaleString('th-TH')}
+            </div>
+          </div>
+
           {/* Notes */}
           {job.notes && (
             <div>

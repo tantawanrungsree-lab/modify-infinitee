@@ -77,6 +77,7 @@ export const LeadTimeCalculatorModal: React.FC<LeadTimeCalculatorModalProps> = (
   // Quantity input string state to allow seamless manual typing and backspacing
   const [quantityInput, setQuantityInput] = useState<string>('10');
   const [copied, setCopied] = useState<boolean>(false);
+  const [showCriteriaTable, setShowCriteriaTable] = useState<boolean>(false);
 
   // Derive numeric quantity with minimum of 1
   const quantity = useMemo(() => {
@@ -112,6 +113,13 @@ export const LeadTimeCalculatorModal: React.FC<LeadTimeCalculatorModalProps> = (
     return calculateLeadTime(validCategory, soDate, quantity);
   }, [validCategory, soDate, quantity]);
 
+  // Determine active tier index for live table highlight
+  const activeTierIndex = useMemo(() => {
+    return CRITERIA_TIERS.findIndex(
+      (t) => quantity >= t.minQty && quantity <= t.maxQty
+    );
+  }, [quantity]);
+
   if (!isOpen) return null;
 
   const config = CATEGORY_CONFIG[validCategory] || CATEGORY_CONFIG.modify_general;
@@ -136,12 +144,6 @@ export const LeadTimeCalculatorModal: React.FC<LeadTimeCalculatorModalProps> = (
     onClose();
   };
 
-  // Determine active tier index for live table highlight
-  const activeTierIndex = CRITERIA_TIERS.findIndex(
-    (t) => quantity >= t.minQty && quantity <= t.maxQty
-  );
-
-  const [showCriteriaTable, setShowCriteriaTable] = useState<boolean>(false);
   const PRESET_QUANTITIES = [5, 15, 30, 75, 150, 250];
 
   return (

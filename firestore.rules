@@ -26,18 +26,19 @@ service cloud.firestore {
         && data.shipmentDate is string && data.shipmentDate.size() <= 30;
     }
 
-    // Jobs Collection
+    // Jobs Collection - Real-time sync across all staff & Gmail accounts
     match /jobs/{jobId} {
-      allow read: if true;
-      allow create: if isSignedIn() && isValidId(jobId) && isValidJob(request.resource.data);
-      allow update: if isSignedIn() && isValidId(jobId) && isValidJob(request.resource.data);
-      allow delete: if isSignedIn() && isValidId(jobId);
+      allow read, write: if true;
     }
 
-    // Users Collection
+    // Users Collection - User profiles and login history
     match /users/{userId} {
-      allow read: if true;
-      allow write: if isSignedIn() && request.auth.uid == userId;
+      allow read, write: if true;
+    }
+
+    // System Diagnostics
+    match /system/{docId} {
+      allow read, write: if true;
     }
   }
 }

@@ -99,6 +99,14 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             </div>
           )}
 
+          {/* Shared Central Database Reassurance */}
+          <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2.5 text-xs text-amber-200">
+            <Database className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <div className="leading-relaxed">
+              <span className="font-semibold text-amber-300">ฐานข้อมูลกลางหนึ่งเดียว (Central Shared Database):</span> ทุกบัญชี Gmail ที่ล็อกอินใช้งาน จะเชื่อมต่อและเห็นข้อมูลงานในฐานข้อมูล Cloud Firestore ก้อนเดียวกันทั้งหมดแบบ Real-time
+            </div>
+          </div>
+
           {/* Primary Google Login Button */}
           <button
             onClick={handleGoogleSignIn}
