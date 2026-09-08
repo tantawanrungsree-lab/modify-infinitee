@@ -19,7 +19,9 @@ import {
   Paperclip,
   Image as ImageIcon,
   ExternalLink,
-  Download
+  Download,
+  Trash2,
+  Edit3
 } from 'lucide-react';
 import { ModifyJob, CATEGORY_CONFIG, JobStatus, DeadlineAlertItem } from '../types';
 import { AttachmentViewerModal } from './AttachmentViewerModal';
@@ -28,6 +30,7 @@ interface JobDetailModalProps {
   job: ModifyJob | null;
   onClose: () => void;
   onEdit: (job: ModifyJob) => void;
+  onDelete?: (jobId: string) => void;
   onStatusChange: (jobId: string, newStatus: JobStatus) => void;
   alert?: DeadlineAlertItem;
 }
@@ -36,6 +39,7 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
   job,
   onClose,
   onEdit,
+  onDelete,
   onStatusChange,
   alert
 }) => {
@@ -185,11 +189,21 @@ Project Code: ${job.projectCode} | Project Name: ${job.projectName}
             </div>
           </div>
 
-          {/* Customer & Description */}
+          {/* Customer & Quantity & Description */}
           <div className="space-y-3">
-            <div>
-              <span className="text-xs text-slate-400 block">ชื่อลูกค้า / บริษัทผู้สั่งซื้อ</span>
-              <div className="text-base font-bold text-white mt-0.5">{job.customerName}</div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <span className="text-xs text-slate-400 block">ชื่อลูกค้า / บริษัทผู้สั่งซื้อ</span>
+                <div className="text-base font-bold text-white mt-0.5">{job.customerName}</div>
+              </div>
+              {job.quantity && (
+                <div className="sm:text-right">
+                  <span className="text-xs text-slate-400 block">จำนวนสินค้า</span>
+                  <div className="text-base font-mono font-bold text-amber-400 mt-0.5">
+                    {job.quantity.toLocaleString()} ชิ้น
+                  </div>
+                </div>
+              )}
             </div>
 
             <div>
@@ -361,23 +375,36 @@ Project Code: ${job.projectCode} | Project Name: ${job.projectName}
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 bg-slate-850 border-t border-slate-750 flex items-center justify-between">
+        <div className="p-4 bg-slate-850 border-t border-slate-750 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="text-[11px] text-slate-400 font-mono">
             ปลายทาง Sheet: <strong className="text-slate-200">{config.sheetName}</strong>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {onDelete && (
+              <button
+                onClick={() => {
+                  onDelete(job.id);
+                  onClose();
+                }}
+                className="px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 text-xs font-bold border border-rose-500/30 transition flex items-center gap-1.5 cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>ลบรายการงาน</span>
+              </button>
+            )}
             <button
               onClick={() => {
                 onClose();
                 onEdit(job);
               }}
-              className="px-4 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-bold border border-amber-500/40 transition"
+              className="px-4 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-bold border border-amber-500/40 transition flex items-center gap-1.5 cursor-pointer"
             >
-              แก้ไขข้อมูล
+              <Edit3 className="w-3.5 h-3.5" />
+              <span>แก้ไขข้อมูล</span>
             </button>
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition"
+              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition cursor-pointer"
             >
               ปิดหน้าต่าง
             </button>

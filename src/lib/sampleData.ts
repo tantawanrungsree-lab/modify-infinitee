@@ -26,31 +26,11 @@ const getRelativeDate = (offsetDays: number): string => {
   return d.toISOString().split('T')[0];
 };
 
-// Empty initial jobs array - All sample data removed as requested
+// Empty initial lists - All sample technicians, sales owners, and store requesters removed as requested
 export const INITIAL_SAMPLE_JOBS: ModifyJob[] = [];
 
-export const TECHNICIANS_LIST = [
-  'ช่างปรีชา (ช่างเทคนิคอาวุโส)',
-  'ช่างเอกชัย (หัวหน้าแผนกพ่นสี)',
-  'ช่างมานพ (ช่างพ่นสีชำนาญการ)',
-  'ช่างธีรภัทร (ช่างประดิษฐ์/อิเล็กทรอนิกส์)',
-  'ช่างธนพล (ช่างประกอบระบบไฟ)',
-  'ช่างวิศรุต (ช่างกลโรงงานและ CNC)'
-];
+export const TECHNICIANS_LIST: string[] = [];
 
-export const SALES_OWNERS_LIST = [
-  'คุณกิตติศักดิ์ (Project Sales)',
-  'คุณพรทิพย์ (Key Account)',
-  'คุณวรวิทย์ (Architectural Sales)',
-  'คุณอนุชา (R&D & Custom Solutions)',
-  'คุณนภัสสร (Commercial Lighting)'
-];
+export const SALES_OWNERS_LIST: string[] = [];
 
-export const STORE_REQUESTERS_LIST = [
-  'สโตร์หลัก คลัง A',
-  'สโตร์รับเข้า B1',
-  'สโตร์รับเข้า B2',
-  'สโตร์พ่นสีและเคมี',
-  'สโตร์ชิ้นส่วนพิเศษ C',
-  'สโตร์สต็อกกลาง'
-];
+export const STORE_REQUESTERS_LIST: string[] = [];

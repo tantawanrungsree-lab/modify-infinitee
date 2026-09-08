@@ -111,22 +111,24 @@ export default function App() {
         if (!snapshot.empty) {
           const remoteJobs: ModifyJob[] = [];
           snapshot.forEach((docSnap) => {
-            remoteJobs.push({ id: docSnap.id, ...docSnap.data() } as ModifyJob);
+            const data = docSnap.data();
+            // Automatically clean out old dummy sample seed data from Firestore if present
+            if (docSnap.id.startsWith('job-mod-') || docSnap.id.startsWith('job-paint-') || docSnap.id.startsWith('job-fab-')) {
+              try {
+                deleteDoc(doc(db, 'jobs', docSnap.id));
+              } catch (e) {
+                // ignore
+              }
+            } else {
+              remoteJobs.push({ id: docSnap.id, ...data } as ModifyJob);
+            }
           });
           // Sort by seqNo
           remoteJobs.sort((a, b) => a.seqNo - b.seqNo);
           setJobs(remoteJobs);
           setFirebaseOnline(true);
         } else {
-          // If Firestore jobs collection is empty in project "modify infinite", seed initial jobs
-          console.log('Seeding initial jobs to Firestore (modify infinite)...');
-          try {
-            for (const sampleJob of INITIAL_SAMPLE_JOBS) {
-              await setDoc(doc(db, 'jobs', sampleJob.id), sampleJob);
-            }
-          } catch (seedErr) {
-            console.warn('Seeding notice:', seedErr);
-          }
+          setJobs([]);
           setFirebaseOnline(true);
         }
       }, (err) => {
@@ -219,6 +221,11 @@ export default function App() {
       };
 
       setJobs((prev) => [newJob, ...prev]);
+
+      // If category is paint or any specific category, navigate to that tab so user sees the newly saved job
+      if (jobData.category) {
+        setActiveView(jobData.category);
+      }
 
       try {
         await setDoc(doc(db, 'jobs', newId), newJob);
@@ -411,6 +418,7 @@ export default function App() {
               urgentAlerts={urgentAlerts}
               onViewJob={setViewingJob}
               onEditJob={handleEditJob}
+              onDeleteJob={handleDeleteJob}
               onStatusChange={handleStatusChange}
               onOpenNewJob={() => {
                 setEditingJob(null);
@@ -424,6 +432,8 @@ export default function App() {
             <CostSummaryView
               jobs={displayedJobs}
               onViewJob={setViewingJob}
+              onEditJob={handleEditJob}
+              onDeleteJob={handleDeleteJob}
               onOpenSheetsSync={() => setIsSheetsModalOpen(true)}
             />
           ) : (
@@ -476,6 +486,7 @@ export default function App() {
           setViewingJob(null);
           handleEditJob(job);
         }}
+        onDelete={handleDeleteJob}
         onStatusChange={handleStatusChange}
         alert={viewingJob ? urgentAlerts.find((a) => a.job.id === viewingJob.id) : undefined}
       />

@@ -137,7 +137,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <PlusCircle className="w-5 h-5 text-slate-950 stroke-[2.5]" />
             <div className="text-left">
               <div className="leading-tight">สร้างงานใหม่ (New Job)</div>
-              <div className="text-[11px] font-medium text-slate-900/80">บันทึกลง Sheet อัตโนมัติ</div>
+              <div className="text-[11px] font-medium text-slate-900/80">บันทึกข้อมูลส่วนกลาง Real-time</div>
             </div>
           </div>
           <Sparkles className="w-4 h-4 text-slate-950 group-hover:rotate-12 transition-transform" />
@@ -175,11 +175,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Process Navigation Section */}
         <div>
-          <div className="px-2 mb-2 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-400">
-            <span>กระบวนการหลัก (Modify Process)</span>
-            <span className="text-[11px] font-normal text-slate-400">5 หน้าจอ</span>
-          </div>
-
           <div className="space-y-2">
             {navItems.map((item) => {
               const Icon = item.icon;

@@ -26,7 +26,6 @@ import {
   Calculator
 } from 'lucide-react';
 import { ModifyJob, JobCategory, JobStatus, CATEGORY_CONFIG, UserProfile, JobAttachment } from '../types';
-import { TECHNICIANS_LIST, SALES_OWNERS_LIST, STORE_REQUESTERS_LIST } from '../lib/sampleData';
 
 interface NewJobModalProps {
   isOpen: boolean;
@@ -69,6 +68,7 @@ export const NewJobModal: React.FC<NewJobModalProps> = ({
   const [projectCode, setProjectCode] = useState<string>('');
   const [projectName, setProjectName] = useState<string>('');
   const [customerName, setCustomerName] = useState<string>('');
+  const [quantity, setQuantity] = useState<number | ''>('');
   const [jobDescription, setJobDescription] = useState<string>('');
   const [receivedDate, setReceivedDate] = useState<string>('');
   const [shipmentDate, setShipmentDate] = useState<string>('');
@@ -83,6 +83,31 @@ export const NewJobModal: React.FC<NewJobModalProps> = ({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Dynamic list of technicians, sales owners, and store requesters from real existing jobs
+  const availableTechnicians = React.useMemo(() => {
+    const set = new Set<string>();
+    existingJobs.forEach(j => {
+      if (j.technician?.trim()) set.add(j.technician.trim());
+    });
+    return Array.from(set);
+  }, [existingJobs]);
+
+  const availableSalesOwners = React.useMemo(() => {
+    const set = new Set<string>();
+    existingJobs.forEach(j => {
+      if (j.salesOwner?.trim()) set.add(j.salesOwner.trim());
+    });
+    return Array.from(set);
+  }, [existingJobs]);
+
+  const availableStoreRequesters = React.useMemo(() => {
+    const set = new Set<string>();
+    existingJobs.forEach(j => {
+      if (j.storeRequester?.trim()) set.add(j.storeRequester.trim());
+    });
+    return Array.from(set);
+  }, [existingJobs]);
+
   useEffect(() => {
     if (isOpen) {
       if (editingJob) {
@@ -95,6 +120,7 @@ export const NewJobModal: React.FC<NewJobModalProps> = ({
         setProjectCode(editingJob.projectCode || '');
         setProjectName(editingJob.projectName || '');
         setCustomerName(editingJob.customerName || '');
+        setQuantity(editingJob.quantity !== undefined ? editingJob.quantity : '');
         setJobDescription(editingJob.jobDescription || '');
         setReceivedDate(editingJob.receivedDate || '');
         setShipmentDate(editingJob.shipmentDate || '');
@@ -110,39 +136,36 @@ export const NewJobModal: React.FC<NewJobModalProps> = ({
         setCategory(cat);
         const countInCat = existingJobs.filter(j => j.category === cat).length;
         setSeqNo(countInCat + 1);
-        const year = new Date().getFullYear();
-        const randNum = Math.floor(100 + Math.random() * 900);
-        setEcrNo(`ECR-${year}-${randNum}`);
-        setSalesOwner(SALES_OWNERS_LIST[0]);
-        setStoreRequester(STORE_REQUESTERS_LIST[0]);
-        setSoNo(`SO-${Math.floor(690000 + Math.random() * 1000)}`);
-        setProjectCode('PRJ-BRZ-');
+        setEcrNo('');
+        setSalesOwner('');
+        setStoreRequester('');
+        setSoNo('');
+        setProjectCode('');
         setProjectName('');
         setCustomerName('');
         
         // Check if prefillData provides values from Lead Time Calculator
         if (prefillData) {
+          setQuantity(prefillData.quantity !== undefined ? prefillData.quantity : '');
           setJobDescription(prefillData.jobDescription || (prefillData.quantity ? `ปรับแต่ง/ผลิตชิ้นงาน จำนวน ${prefillData.quantity} ชิ้น` : ''));
           setReceivedDate(prefillData.receivedDate || new Date().toISOString().split('T')[0]);
           setShipmentDate(prefillData.shipmentDate || '');
           setEstimatedDate(prefillData.estimatedDate || '');
           setNotes(prefillData.notes || '');
         } else {
+          setQuantity('');
           setJobDescription('');
           const today = new Date().toISOString().split('T')[0];
           setReceivedDate(today);
-          
-          const nextWeek = new Date();
-          nextWeek.setDate(nextWeek.getDate() + 3);
-          setShipmentDate(nextWeek.toISOString().split('T')[0]);
-          setEstimatedDate(nextWeek.toISOString().split('T')[0]);
+          setShipmentDate('');
+          setEstimatedDate('');
           setNotes('');
         }
         
         setStatus('รอดำเนินการ');
-        setTechnician(TECHNICIANS_LIST[0]);
-        setLaborCost(1500);
-        setMaterialCost(1000);
+        setTechnician('');
+        setLaborCost(0);
+        setMaterialCost(0);
         setAttachments([]);
       }
       setUploadError(null);
@@ -266,6 +289,7 @@ export const NewJobModal: React.FC<NewJobModalProps> = ({
       projectCode: projectCode.trim(),
       projectName: projectName.trim(),
       customerName: customerName.trim(),
+      quantity: quantity !== '' ? Number(quantity) : undefined,
       jobDescription: jobDescription.trim(),
       receivedDate,
       shipmentDate,
@@ -492,7 +516,7 @@ export const NewJobModal: React.FC<NewJobModalProps> = ({
                 className="w-full bg-slate-800 border border-slate-700 text-sm text-slate-100 px-3 py-2 rounded-lg focus:outline-none focus:border-amber-500"
               />
               <datalist id="sales-list">
-                {SALES_OWNERS_LIST.map(s => <option key={s} value={s} />)}
+                {availableSalesOwners.map(s => <option key={s} value={s} />)}
               </datalist>
             </div>
 
@@ -508,37 +532,56 @@ export const NewJobModal: React.FC<NewJobModalProps> = ({
                 className="w-full bg-slate-800 border border-slate-700 text-sm text-slate-100 px-3 py-2 rounded-lg focus:outline-none focus:border-amber-500"
               />
               <datalist id="store-list">
-                {STORE_REQUESTERS_LIST.map(s => <option key={s} value={s} />)}
+                {availableStoreRequesters.map(s => <option key={s} value={s} />)}
               </datalist>
             </div>
           </div>
 
-          {/* Customer Name */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-200 mb-1">
-              ชื่อลูกค้า / บริษัทผู้สั่งซื้อ *
-            </label>
-            <input
-              type="text"
-              placeholder="เช่น บริษัท แมกโนเลีย ควอลิตี้ ดีเวล็อปเม้นต์ จำกัด"
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-              className={`w-full bg-slate-800 border ${errors.customerName ? 'border-rose-500' : 'border-slate-700'} text-sm text-slate-100 px-3 py-2 rounded-lg focus:outline-none focus:border-amber-500`}
-            />
-            {errors.customerName && <p className="text-[11px] text-rose-400 mt-1">{errors.customerName}</p>}
+          {/* Customer Name & Quantity */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-semibold text-slate-200 mb-1">
+                ชื่อลูกค้า / บริษัทผู้สั่งซื้อ *
+              </label>
+              <input
+                type="text"
+                placeholder="เช่น บริษัท แมกโนเลีย ควอลิตี้ ดีเวล็อปเม้นต์ จำกัด"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                className={`w-full bg-slate-800 border ${errors.customerName ? 'border-rose-500' : 'border-slate-700'} text-sm text-slate-100 px-3 py-2 rounded-lg focus:outline-none focus:border-amber-500`}
+              />
+              {errors.customerName && <p className="text-[11px] text-rose-400 mt-1">{errors.customerName}</p>}
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-amber-300 mb-1">
+                จำนวนสินค้า / ชิ้นงาน (ชิ้น)
+              </label>
+              <input
+                type="number"
+                min="1"
+                placeholder="เช่น 10, 50, 100"
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value) || 1))}
+                className="w-full bg-slate-800 border border-slate-700 text-sm text-amber-300 font-bold px-3 py-2 rounded-lg focus:outline-none focus:border-amber-500"
+              />
+            </div>
           </div>
 
-          {/* Job Description */}
+          {/* Job Description (5 Lines) */}
           <div>
-            <label className="block text-xs font-semibold text-slate-200 mb-1">
-              รายละเอียดงาน Modify / ข้อกำหนดเทคนิค *
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-semibold text-slate-200">
+                รายละเอียดงาน Modify / ข้อกำหนดเทคนิค (5 บรรทัด) *
+              </label>
+              <span className="text-[11px] text-slate-400">กรอกรายละเอียดขั้นตอนและสเปกงาน</span>
+            </div>
             <textarea
-              rows={3}
-              placeholder="ระบุรายละเอียด เช่น ตัดแต่งความยาวโคม, เปลี่ยนไดร์เวอร์ DALI, พ่นสีพิเศษ RAL 1036, เจาะรูยึด Flush mount..."
+              rows={5}
+              placeholder="1. สเปกชิ้นงาน / รุ่นโคมไฟ&#10;2. การตัดแต่งโครงสร้าง / ดัดแปลงมิติ&#10;3. งานระบบไฟฟ้า / ไดร์เวอร์ / DALI&#10;4. กระบวนการพ่นสี / เบอร์สี RAL หรือสีพิเศษ&#10;5. จุดยึด ขาแขวน อุปกรณ์เสริม และข้อกำหนดพิเศษ"
               value={jobDescription}
               onChange={(e) => setJobDescription(e.target.value)}
-              className={`w-full bg-slate-800 border ${errors.jobDescription ? 'border-rose-500' : 'border-slate-700'} text-sm text-slate-100 p-3 rounded-lg focus:outline-none focus:border-amber-500 leading-relaxed`}
+              className={`w-full bg-slate-800 border ${errors.jobDescription ? 'border-rose-500' : 'border-slate-700'} text-sm text-slate-100 p-3 rounded-lg focus:outline-none focus:border-amber-500 leading-relaxed font-sans`}
             />
             {errors.jobDescription && <p className="text-[11px] text-rose-400 mt-1">{errors.jobDescription}</p>}
           </div>
@@ -754,7 +797,7 @@ export const NewJobModal: React.FC<NewJobModalProps> = ({
                 className={`w-full bg-slate-800 border ${errors.technician ? 'border-rose-500' : 'border-slate-700'} text-sm text-slate-100 px-3 py-2 rounded-lg focus:outline-none focus:border-amber-500`}
               />
               <datalist id="tech-list">
-                {TECHNICIANS_LIST.map(t => <option key={t} value={t} />)}
+                {availableTechnicians.map(t => <option key={t} value={t} />)}
               </datalist>
               {errors.technician && <p className="text-[11px] text-rose-400 mt-1">{errors.technician}</p>}
             </div>

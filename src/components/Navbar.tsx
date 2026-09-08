@@ -103,16 +103,6 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Action Buttons & Profile */}
       <div className="flex items-center gap-2 md:gap-3">
-        {/* Google Sheets Action */}
-        <button
-          onClick={onOpenSheetsModal}
-          title="Google Sheets Live Sync"
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs md:text-sm font-medium rounded-lg transition"
-        >
-          <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
-          <span className="hidden sm:inline">Google Sheets</span>
-        </button>
-
         {/* 1-Day Advance Deadline Alert Button */}
         <button
           onClick={onOpenAlerts}
@@ -175,10 +165,10 @@ export const Navbar: React.FC<NavbarProps> = ({
         ) : (
           <button
             onClick={onOpenLoginModal}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs md:text-sm font-medium rounded-lg transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-750 border border-slate-700 text-slate-200 text-xs md:text-sm font-medium rounded-lg transition cursor-pointer"
           >
             <LogIn className="w-4 h-4 text-amber-400" />
-            <span className="hidden sm:inline">Google Login</span>
+            <span className="hidden sm:inline">เข้าสู่ระบบ</span>
           </button>
         )}
       </div>

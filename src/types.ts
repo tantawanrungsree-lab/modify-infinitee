@@ -24,6 +24,7 @@ export interface ModifyJob {
   projectCode: string;             // Project Code (Primary Key 2)
   projectName: string;             // Project Name (Primary Key 3)
   customerName: string;            // ชื่อลูกค้า
+  quantity?: number;               // จำนวนสินค้า / ชิ้นงาน (ชิ้น)
   jobDescription: string;          // รายละเอียดงาน
   receivedDate: string;            // วันที่รับงาน (YYYY-MM-DD)
   shipmentDate: string;            // Shipment Date (YYYY-MM-DD)

@@ -160,30 +160,22 @@ export const JobTable: React.FC<JobTableProps> = ({
             )}
           </div>
           <p className="text-xs md:text-sm text-slate-400">
-            {config.description} • ตารางซิงค์ตรงกับ Google Sheet และบันทึกบน Firebase
+            {config.description} • บันทึกและเชื่อมโยงข้อมูลผ่านระบบ Cloud Firestore แบบ Real-time
           </p>
         </div>
 
         <div className="flex items-center flex-wrap gap-2.5">
           <button
             onClick={() => exportJobsToCSV(categoryJobs, config.title)}
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs md:text-sm font-medium rounded-xl transition"
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs md:text-sm font-medium rounded-xl transition cursor-pointer"
           >
             <Download className="w-4 h-4 text-slate-400" />
             <span>Export CSV</span>
           </button>
-          
-          <button
-            onClick={onOpenSheetsSync}
-            className="flex items-center gap-1.5 px-3 py-2 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 text-xs md:text-sm font-medium rounded-xl transition"
-          >
-            <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
-            <span>Google Sheet Sync</span>
-          </button>
 
           <button
             onClick={() => onOpenNewJobForCategory(category)}
-            className="flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs md:text-sm font-bold rounded-xl shadow-lg shadow-amber-500/20 transition"
+            className="flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs md:text-sm font-bold rounded-xl shadow-lg shadow-amber-500/20 transition cursor-pointer"
           >
             <span>+ เพิ่มงาน {config.title}</span>
           </button>
@@ -287,8 +279,17 @@ export const JobTable: React.FC<JobTableProps> = ({
                 <th className="py-3 px-3 w-44 cursor-pointer hover:bg-slate-800" onClick={() => handleSort('customerName')}>
                   <span>ชื่อลูกค้า</span>
                 </th>
-                <th className="py-3 px-3 w-60">
-                  <span>รายละเอียดงาน Modify</span>
+                <th className="py-3 px-3 w-28 text-center cursor-pointer hover:bg-slate-800" onClick={() => handleSort('quantity')}>
+                  <div className="flex items-center justify-center gap-1">
+                    <span>จำนวนชิ้น</span>
+                    <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                  </div>
+                </th>
+                <th className="py-3 px-3 w-64 cursor-pointer hover:bg-slate-800" onClick={() => handleSort('jobDescription')}>
+                  <div className="flex items-center gap-1">
+                    <span>รายละเอียดงาน</span>
+                    <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                  </div>
                 </th>
                 {/* Image / Attachment Column */}
                 <th className="py-3 px-3 w-36 bg-slate-800/80 text-amber-300">
@@ -329,7 +330,7 @@ export const JobTable: React.FC<JobTableProps> = ({
             <tbody className="divide-y divide-slate-800 text-xs text-slate-200">
               {sortedJobs.length === 0 ? (
                 <tr>
-                  <td colSpan={16} className="py-12 text-center text-slate-400">
+                  <td colSpan={17} className="py-12 text-center text-slate-400">
                     <div className="max-w-xs mx-auto space-y-2">
                       <FileText className="w-8 h-8 text-slate-400 mx-auto" />
                       <div className="font-semibold text-slate-300">ไม่พบข้อมูลในตารางนี้</div>
@@ -382,7 +383,7 @@ export const JobTable: React.FC<JobTableProps> = ({
                           <button
                             onClick={() => copyToClipboard(job.soNo, `so-${job.id}`)}
                             title="คัดลอก SO No."
-                            className="opacity-0 group-hover:opacity-100 text-amber-400/80 hover:text-amber-300 p-0.5 rounded"
+                            className="opacity-0 group-hover:opacity-100 text-amber-400/80 hover:text-amber-300 p-0.5 rounded cursor-pointer"
                           >
                             {copiedKey === `so-${job.id}` ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                           </button>
@@ -408,9 +409,20 @@ export const JobTable: React.FC<JobTableProps> = ({
                         </div>
                       </td>
 
+                      {/* จำนวนชิ้น (Qty) */}
+                      <td className="py-3 px-3 text-center">
+                        {job.quantity ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md font-mono font-bold text-xs bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                            {job.quantity.toLocaleString()} ชิ้น
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 text-xs">-</span>
+                        )}
+                      </td>
+
                       {/* รายละเอียดงาน */}
                       <td className="py-3 px-3 text-slate-300">
-                        <div className="line-clamp-2 text-slate-300 text-[11px] leading-relaxed" title={job.jobDescription}>
+                        <div className="line-clamp-2 text-slate-300 text-[11px] leading-relaxed font-sans" title={job.jobDescription}>
                           {job.jobDescription}
                         </div>
                       </td>
