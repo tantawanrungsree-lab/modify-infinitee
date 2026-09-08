@@ -27,18 +27,15 @@ const DEFAULT_AUTO_USER: UserProfile = {
 };
 
 export default function App() {
-  // Main State - Clean initial jobs with sample data removed
+  // Main State - Load existing jobs from localStorage
   const [jobs, setJobs] = useState<ModifyJob[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        // Clear if old sample seed jobs exist
-        if (Array.isArray(parsed) && parsed.some((j: any) => j.id?.startsWith('job-mod-') || j.id?.startsWith('job-paint-') || j.id?.startsWith('job-fab-'))) {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
-          return [];
+        if (Array.isArray(parsed)) {
+          return parsed;
         }
-        return parsed;
       } catch (e) {
         console.error('Error parsing stored jobs:', e);
       }
@@ -102,33 +99,24 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // Firestore Realtime Listener (Syncs all Gmail accounts in real time)
+  // Firestore Realtime Listener (Syncs across devices in real time)
   useEffect(() => {
     let unsubscribe: () => void = () => {};
     try {
       const jobsCol = collection(db, 'jobs');
-      unsubscribe = onSnapshot(jobsCol, async (snapshot) => {
+      unsubscribe = onSnapshot(jobsCol, (snapshot) => {
         if (!snapshot.empty) {
           const remoteJobs: ModifyJob[] = [];
           snapshot.forEach((docSnap) => {
             const data = docSnap.data();
-            // Automatically clean out old dummy sample seed data from Firestore if present
-            if (docSnap.id.startsWith('job-mod-') || docSnap.id.startsWith('job-paint-') || docSnap.id.startsWith('job-fab-')) {
-              try {
-                deleteDoc(doc(db, 'jobs', docSnap.id));
-              } catch (e) {
-                // ignore
-              }
-            } else {
-              remoteJobs.push({ id: docSnap.id, ...data } as ModifyJob);
-            }
+            remoteJobs.push({ id: docSnap.id, ...data } as ModifyJob);
           });
           // Sort by seqNo
-          remoteJobs.sort((a, b) => a.seqNo - b.seqNo);
+          remoteJobs.sort((a, b) => (a.seqNo || 0) - (b.seqNo || 0));
           setJobs(remoteJobs);
           setFirebaseOnline(true);
         } else {
-          setJobs([]);
+          // If Firestore is truly empty and no local records exist, retain current state
           setFirebaseOnline(true);
         }
       }, (err) => {
@@ -206,8 +194,8 @@ export default function App() {
         console.warn('Local update synced:', err);
       }
     } else {
-      // Create new
-      const newId = `job-${jobData.category}-${Date.now()}`;
+      // Create new with robust unique ID
+      const newId = `job_${jobData.category}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
       const shouldClearAttachments = jobData.status === 'เสร็จสิ้น';
       const newJob: ModifyJob = {
         ...jobData,
@@ -222,7 +210,7 @@ export default function App() {
 
       setJobs((prev) => [newJob, ...prev]);
 
-      // If category is paint or any specific category, navigate to that tab so user sees the newly saved job
+      // Navigate to the target job category tab (e.g., 'paint' for งานพ่นสี)
       if (jobData.category) {
         setActiveView(jobData.category);
       }

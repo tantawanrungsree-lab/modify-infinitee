@@ -14,6 +14,7 @@
         "projectCode": { "type": "string", "description": "Project code (part of Primary Key)" },
         "projectName": { "type": "string", "description": "Project name (part of Primary Key)" },
         "customerName": { "type": "string", "description": "ชื่อลูกค้า Customer name" },
+        "quantity": { "type": "number", "description": "จำนวนสินค้า / ชิ้นงาน (ชิ้น)" },
         "jobDescription": { "type": "string", "description": "รายละเอียดงาน Work description" },
         "receivedDate": { "type": "string", "description": "วันที่รับงาน Received date (YYYY-MM-DD)" },
         "shipmentDate": { "type": "string", "description": "Shipment date (YYYY-MM-DD)" },

@@ -282,17 +282,23 @@ export const CostSummaryView: React.FC<CostSummaryViewProps> = ({
                 <th className="py-3 px-3 w-48 bg-indigo-500/10 border-r border-indigo-500/20 text-indigo-300 font-extrabold cursor-pointer" onClick={() => handleSort('projectName')}>
                   <span>Project Name (PK)</span>
                 </th>
-                <th className="py-3 px-3 w-40">
-                  <span>ชื่อลูกค้า</span>
+                <th className="py-3 px-3 w-56 cursor-pointer hover:bg-slate-800" onClick={() => handleSort('jobDescription')}>
+                  <div className="flex items-center gap-1">
+                    <span>รายละเอียดงาน</span>
+                    <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                  </div>
                 </th>
-                <th className="py-3 px-3 w-60">
-                  <span>รายละเอียดงาน</span>
+                <th className="py-3 px-3 w-32 cursor-pointer hover:bg-slate-800" onClick={() => handleSort('receivedDate')}>
+                  <div className="flex items-center gap-1">
+                    <span>วันที่รับงาน</span>
+                    <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                  </div>
                 </th>
-                <th className="py-3 px-3 w-28">
-                  <span>วันที่รับงาน</span>
-                </th>
-                <th className="py-3 px-3 w-32 cursor-pointer" onClick={() => handleSort('shipmentDate')}>
-                  <span>Shipment Date</span>
+                <th className="py-3 px-3 w-32 cursor-pointer hover:bg-slate-800" onClick={() => handleSort('shipmentDate')}>
+                  <div className="flex items-center gap-1">
+                    <span>Shipment Date</span>
+                    <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                  </div>
                 </th>
                 <th className="py-3 px-3 w-32">
                   <span>วันที่ประมาณการ</span>
@@ -317,7 +323,7 @@ export const CostSummaryView: React.FC<CostSummaryViewProps> = ({
             <tbody className="divide-y divide-slate-800 text-xs text-slate-200">
               {sortedJobs.length === 0 ? (
                 <tr>
-                  <td colSpan={16} className="py-12 text-center text-slate-400">
+                  <td colSpan={15} className="py-12 text-center text-slate-400">
                     <ReceiptText className="w-10 h-10 mx-auto mb-2 text-slate-600" />
                     <div className="text-sm font-semibold text-slate-300">ไม่มีข้อมูลรายการงานในระบบ</div>
                     <div className="text-xs text-slate-500 mt-1">สามารถกดปุ่ม "สร้างงานใหม่" จากเมนูด้านซ้ายเพื่อเริ่มบันทึกงาน</div>
@@ -350,14 +356,13 @@ export const CostSummaryView: React.FC<CostSummaryViewProps> = ({
                       <div className="font-semibold text-slate-200 line-clamp-1">{job.projectName}</div>
                       <div className="font-mono text-[10px] text-indigo-400">{job.projectCode}</div>
                     </td>
-                    <td className="py-3 px-3 text-slate-300 line-clamp-2">
-                      {job.customerName}
+                    <td className="py-3 px-3 text-slate-300">
+                      <div className="line-clamp-2 text-[11px] leading-relaxed" title={job.jobDescription}>
+                        {job.jobDescription}
+                      </div>
                     </td>
-                    <td className="py-3 px-3 text-slate-300 line-clamp-2 text-[11px]">
-                      {job.jobDescription}
-                    </td>
-                    <td className="py-3 px-3 font-mono text-slate-400 text-[11px]">
-                      {job.receivedDate}
+                    <td className="py-3 px-3 font-mono text-slate-300 text-[11px]">
+                      {job.receivedDate || '-'}
                     </td>
                     <td className="py-3 px-3 font-mono text-slate-200 font-medium text-[11px]">
                       {job.shipmentDate}
