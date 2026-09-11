@@ -77,6 +77,74 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
   return errInfo;
 }
 
+// Clean object for Firestore (strip any undefined fields to prevent Firestore serialization errors)
+export function cleanFirestoreData<T extends Record<string, any>>(obj: T): Record<string, any> {
+  const clean: Record<string, any> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value === undefined) {
+      continue;
+    }
+    if (value !== null && typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date)) {
+      clean[key] = cleanFirestoreData(value);
+    } else if (Array.isArray(value)) {
+      clean[key] = value
+        .filter(item => item !== undefined)
+        .map(item => (item !== null && typeof item === 'object') ? cleanFirestoreData(item) : item);
+    } else {
+      clean[key] = value;
+    }
+  }
+  return clean;
+}
+
+// Save or merge job document to Firestore
+export async function saveJobToFirestore(job: ModifyJob): Promise<void> {
+  try {
+    const cleaned = cleanFirestoreData(job);
+    await setDoc(doc(db, 'jobs', job.id), cleaned, { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, `jobs/${job.id}`);
+    throw error;
+  }
+}
+
+// Update specific fields of a job document in Firestore
+export async function updateJobInFirestore(jobId: string, updates: Partial<ModifyJob>): Promise<void> {
+  try {
+    const cleaned = cleanFirestoreData(updates);
+    await updateDoc(doc(db, 'jobs', jobId), cleaned);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, `jobs/${jobId}`);
+    throw error;
+  }
+}
+
+// Delete job document from Firestore
+export async function deleteJobFromFirestore(jobId: string): Promise<void> {
+  try {
+    await deleteDoc(doc(db, 'jobs', jobId));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, `jobs/${jobId}`);
+    throw error;
+  }
+}
+
+// Seed initial sample jobs to Firestore if remote database is empty
+export async function seedInitialJobsToFirestore(initialJobs: ModifyJob[]): Promise<void> {
+  try {
+    const snapshot = await getDocs(collection(db, 'jobs'));
+    if (snapshot.empty && initialJobs.length > 0) {
+      console.log('Seeding initial jobs to Firestore central database...');
+      for (const job of initialJobs) {
+        await saveJobToFirestore(job);
+      }
+      console.log('Initial jobs seeded successfully to Firestore.');
+    }
+  } catch (error) {
+    console.warn('Seeding check note:', error);
+  }
+}
+
 // Test connection on boot
 export async function testFirestoreConnection(): Promise<boolean> {
   try {

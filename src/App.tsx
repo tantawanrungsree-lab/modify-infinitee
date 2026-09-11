@@ -13,8 +13,18 @@ import { CalendarView } from './components/CalendarView';
 import { JobQueueView } from './components/JobQueueView';
 import { ModifyJob, ActiveView, JobCategory, JobStatus, UserProfile, DeadlineAlertItem, CATEGORY_CONFIG } from './types';
 import { INITIAL_SAMPLE_JOBS } from './lib/sampleData';
-import { db, auth, logoutUser, testFirestoreConnection, saveUserProfile } from './lib/firebase';
-import { collection, onSnapshot, doc, setDoc, deleteDoc, updateDoc, getDocs } from 'firebase/firestore';
+import { 
+  db, 
+  auth, 
+  logoutUser, 
+  testFirestoreConnection, 
+  saveUserProfile, 
+  saveJobToFirestore, 
+  updateJobInFirestore, 
+  deleteJobFromFirestore, 
+  seedInitialJobsToFirestore 
+} from './lib/firebase';
+import { collection, onSnapshot, getDocs } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 
 const STORAGE_KEY = 'BRZ_LUMENCRAFT_JOBS_V2';
@@ -110,12 +120,12 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // Firestore Realtime Listener (Syncs across devices in real time)
+  // Firestore Realtime Listener (Syncs across all devices & accounts in real time)
   useEffect(() => {
     let unsubscribe: () => void = () => {};
     try {
       const jobsCol = collection(db, 'jobs');
-      unsubscribe = onSnapshot(jobsCol, (snapshot) => {
+      unsubscribe = onSnapshot(jobsCol, async (snapshot) => {
         if (!snapshot.empty) {
           const remoteJobs: ModifyJob[] = [];
           snapshot.forEach((docSnap) => {
@@ -125,13 +135,16 @@ export default function App() {
           // Sort by seqNo
           remoteJobs.sort((a, b) => (a.seqNo || 0) - (b.seqNo || 0));
           setJobs(remoteJobs);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteJobs));
           setFirebaseOnline(true);
         } else {
-          // If Firestore is truly empty and no local records exist, retain current state
+          // If Firestore database is currently empty, seed the initial sample jobs to Cloud Firestore
+          console.log('Central database is empty, seeding initial dataset...');
           setFirebaseOnline(true);
+          await seedInitialJobsToFirestore(jobs);
         }
       }, (err) => {
-        console.warn('Firestore offline / cached mode active:', err.message);
+        console.warn('Firestore realtime sync notice (using cache/local backup):', err.message);
       });
     } catch (e) {
       console.warn('Using local persistence engine:', e);
@@ -203,12 +216,16 @@ export default function App() {
         updatedAt: now,
       };
 
-      setJobs((prev) => prev.map((j) => (j.id === editingJob.id ? updated : j)));
+      setJobs((prev) => {
+        const next = prev.map((j) => (j.id === editingJob.id ? updated : j));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        return next;
+      });
 
       try {
-        await updateDoc(doc(db, 'jobs', editingJob.id), updated as any);
+        await saveJobToFirestore(updated);
       } catch (err) {
-        console.warn('Local update synced:', err);
+        console.warn('Firestore update sync notice:', err);
       }
     } else {
       // Create new with robust unique ID
@@ -224,14 +241,18 @@ export default function App() {
         completedDate: autoCompletedDate,
         attachments: shouldClearAttachments ? [] : (jobData.attachments ?? []),
         id: newId,
-        createdBy: user?.uid,
-        createdByName: user?.displayName,
-        createdByEmail: user?.email,
+        createdBy: user?.uid || 'anonymous-user',
+        createdByName: user?.displayName || 'Staff Member',
+        createdByEmail: user?.email || 'staff@lumencraft.co.th',
         createdAt: now,
         updatedAt: now,
       };
 
-      setJobs((prev) => [newJob, ...prev]);
+      setJobs((prev) => {
+        const next = [newJob, ...prev];
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        return next;
+      });
 
       // Navigate to the target job category tab (e.g., 'paint' for งานพ่นสี)
       if (jobData.category) {
@@ -239,9 +260,9 @@ export default function App() {
       }
 
       try {
-        await setDoc(doc(db, 'jobs', newId), newJob);
+        await saveJobToFirestore(newJob);
       } catch (err) {
-        console.warn('Local create saved:', err);
+        console.warn('Firestore create sync notice:', err);
       }
     }
 
@@ -254,10 +275,12 @@ export default function App() {
     const shouldClearAttachments = newStatus === 'เสร็จสิ้น';
     const completionTimestamp = newStatus === 'เสร็จสิ้น' ? formatCurrentDateTime() : undefined;
 
-    setJobs((prev) =>
-      prev.map((j) => {
+    const existingJob = jobs.find(j => j.id === jobId);
+    const finalCompletedDate = newStatus === 'เสร็จสิ้น' ? (existingJob?.completedDate || completionTimestamp) : undefined;
+
+    setJobs((prev) => {
+      const next = prev.map((j) => {
         if (j.id === jobId) {
-          const finalCompletedDate = newStatus === 'เสร็จสิ้น' ? (j.completedDate || completionTimestamp) : undefined;
           return {
             ...j,
             status: newStatus,
@@ -267,13 +290,13 @@ export default function App() {
           };
         }
         return j;
-      })
-    );
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
 
     try {
-      const existingJob = jobs.find(j => j.id === jobId);
-      const finalCompletedDate = newStatus === 'เสร็จสิ้น' ? (existingJob?.completedDate || completionTimestamp) : null;
-      const updateData: any = { 
+      const updateData: Partial<ModifyJob> = { 
         status: newStatus, 
         completedDate: finalCompletedDate,
         updatedAt: now 
@@ -281,9 +304,9 @@ export default function App() {
       if (shouldClearAttachments) {
         updateData.attachments = [];
       }
-      await updateDoc(doc(db, 'jobs', jobId), updateData);
+      await updateJobInFirestore(jobId, updateData);
     } catch (err) {
-      console.warn('Status change local:', err);
+      console.warn('Status change firestore sync:', err);
     }
   };
 
@@ -295,11 +318,15 @@ export default function App() {
       confirmed = true;
     }
     if (confirmed) {
-      setJobs((prev) => prev.filter((j) => j.id !== jobId));
+      setJobs((prev) => {
+        const next = prev.filter((j) => j.id !== jobId);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        return next;
+      });
       try {
-        await deleteDoc(doc(db, 'jobs', jobId));
+        await deleteJobFromFirestore(jobId);
       } catch (err) {
-        console.warn('Local delete:', err);
+        console.warn('Delete job firestore sync:', err);
       }
     }
   };
