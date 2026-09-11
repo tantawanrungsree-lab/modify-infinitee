@@ -9,10 +9,13 @@ export const SHEET_COLUMNS = [
   'Project Code (PK)',
   'Project Name (PK)',
   'ชื่อลูกค้า',
+  'จำนวนชิ้น (Qty)',
   'รายละเอียดงาน',
   'วันที่รับงาน',
   'Shipment Date',
   'วันที่ประมาณการ',
+  'วันที่เสร็จสิ้น',
+  'จำนวนวันที่ใช้ (วัน)',
   'Status งาน',
   'ช่างที่ทำ / ผู้รับผิดชอบ',
   'ค่าแรง (THB)',
@@ -23,6 +26,20 @@ export const SHEET_COLUMNS = [
 ];
 
 export function jobToRowArray(job: ModifyJob): (string | number)[] {
+  let daysUsed: string | number = '-';
+  if (job.receivedDate) {
+    const comp = job.completedDate || (job.status === 'เสร็จสิ้น' ? job.updatedAt : undefined);
+    if (comp) {
+      const recStr = job.receivedDate.split(' ')[0].split('T')[0];
+      const compStr = comp.split(' ')[0].split('T')[0];
+      const dRec = new Date(recStr);
+      const dComp = new Date(compStr);
+      if (!isNaN(dRec.getTime()) && !isNaN(dComp.getTime())) {
+        daysUsed = Math.max(0, Math.round((dComp.getTime() - dRec.getTime()) / (1000 * 60 * 60 * 24)));
+      }
+    }
+  }
+
   return [
     job.seqNo,
     job.ecrNo || '-',
@@ -32,10 +49,13 @@ export function jobToRowArray(job: ModifyJob): (string | number)[] {
     job.projectCode,
     job.projectName,
     job.customerName,
+    job.quantity !== undefined ? job.quantity : '-',
     job.jobDescription.replace(/\n/g, ' '),
     job.receivedDate,
     job.shipmentDate,
     job.estimatedDate || '-',
+    job.completedDate || (job.status === 'เสร็จสิ้น' ? 'เสร็จสิ้น' : '-'),
+    daysUsed,
     job.status,
     job.technician || '-',
     job.laborCost || 0,

@@ -1,6 +1,6 @@
 export type JobCategory = 'modify_general' | 'paint' | 'custom_fabrication';
 
-export type ActiveView = 'modify_general' | 'paint' | 'custom_fabrication' | 'cost_summary' | 'calendar';
+export type ActiveView = 'job_queue' | 'modify_general' | 'paint' | 'custom_fabrication' | 'cost_summary' | 'calendar';
 
 export type JobStatus = 'รอดำเนินการ' | 'กำลังดำเนินการ' | 'รอตรวจรับ' | 'เสร็จสิ้น' | 'ยกเลิก';
 
@@ -30,6 +30,7 @@ export interface ModifyJob {
   shipmentDate: string;            // Shipment Date (YYYY-MM-DD)
   estimatedDate: string;           // วันที่ประมาณการ (YYYY-MM-DD)
   status: JobStatus;               // Status งาน
+  completedDate?: string;          // วันที่และเวลาเสร็จสิ้น (YYYY-MM-DD HH:mm) บันทึกอัตโนมัติเมื่อสถานะเสร็จสิ้น
   technician: string;              // ช่างที่ทำ / ช่างผู้รับผิดชอบ
   category: JobCategory;           // ประเภทงาน (ตัวบ่งชี้ว่าไปเก็บ Sheet ไหน)
   laborCost?: number;              // ค่าแรง

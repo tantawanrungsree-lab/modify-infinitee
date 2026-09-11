@@ -1,5 +1,6 @@
 import React from 'react';
 import { 
+  ListOrdered,
   Wrench, 
   Paintbrush, 
   Cpu, 
@@ -8,7 +9,7 @@ import {
   Clock, 
   CheckCircle2, 
   AlertCircle,
-  FileSpreadsheet,
+  FileSpreadsheet, 
   ChevronRight,
   Sparkles,
   TrendingUp,
@@ -49,7 +50,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return jobs.filter(j => j.category === cat && j.status === 'รอดำเนินการ').length;
   };
 
+  const activeQueueCount = jobs.filter(j => j.status !== 'เสร็จสิ้น' && j.status !== 'ยกเลิก').length;
+  const activeUrgentCount = urgentAlerts.filter(a => a.job.status !== 'เสร็จสิ้น' && a.job.status !== 'ยกเลิก').length;
+
   const navItems = [
+    {
+      id: 'job_queue' as ActiveView,
+      title: 'คิวงาน',
+      subtext: 'FIFO Queue (เฉพาะงานที่ยังไม่เสร็จ)',
+      icon: ListOrdered,
+      count: activeQueueCount,
+      urgentCount: activeUrgentCount,
+      newCount: jobs.filter(j => j.status === 'รอดำเนินการ').length,
+      activeClass: 'bg-amber-500/20 text-amber-300 border-amber-500 shadow-md shadow-amber-500/15 ring-1 ring-amber-500/30',
+      inactiveClass: 'hover:bg-slate-800/80 text-slate-300 border-transparent hover:border-slate-700',
+      badgeClass: 'bg-amber-500/25 text-amber-300 border-amber-500/40',
+      iconClass: 'text-amber-400',
+      sheetCode: 'Master Queue',
+    },
     {
       id: 'modify_general' as ActiveView,
       title: 'งาน Modify ทั่วไป',
@@ -156,14 +174,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <Calculator className="w-4 h-4" />
               </div>
               <div className="min-w-0">
-                <div className="text-xs sm:text-sm font-bold text-amber-300 flex items-center gap-1.5 flex-wrap">
+                <div className="text-xs sm:text-sm font-bold text-amber-300 flex items-center gap-1.5">
                   <span>คำนวณระยะเวลา Modify</span>
-                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono">
-                    SO + 10 วัน
-                  </span>
-                </div>
-                <div className="text-[11px] text-slate-400 font-medium truncate mt-0.5">
-                  สูตร SO + 10 วันทำการ + ชิ้นงาน
                 </div>
               </div>
             </div>

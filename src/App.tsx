@@ -10,6 +10,7 @@ import { GoogleSheetsSyncModal } from './components/GoogleSheetsSyncModal';
 import { LoginModal } from './components/LoginModal';
 import { LeadTimeCalculatorModal } from './components/LeadTimeCalculatorModal';
 import { CalendarView } from './components/CalendarView';
+import { JobQueueView } from './components/JobQueueView';
 import { ModifyJob, ActiveView, JobCategory, JobStatus, UserProfile, DeadlineAlertItem, CATEGORY_CONFIG } from './types';
 import { INITIAL_SAMPLE_JOBS } from './lib/sampleData';
 import { db, auth, logoutUser, testFirestoreConnection, saveUserProfile } from './lib/firebase';
@@ -24,6 +25,16 @@ const DEFAULT_AUTO_USER: UserProfile = {
   email: 'staff@lumencraft.co.th',
   role: 'Production Staff',
   department: 'ฝ่ายผลิตและบริหารจัดการ'
+};
+
+const formatCurrentDateTime = (): string => {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  const hh = String(now.getHours()).padStart(2, '0');
+  const min = String(now.getMinutes()).padStart(2, '0');
+  return `${y}-${m}-${d} ${hh}:${min}`;
 };
 
 export default function App() {
@@ -179,9 +190,15 @@ export default function App() {
     if (editingJob) {
       // Update existing
       const shouldClearAttachments = jobData.status === 'เสร็จสิ้น';
+      const isFinishing = jobData.status === 'เสร็จสิ้น';
+      const autoCompletedDate = isFinishing 
+        ? (jobData.completedDate || editingJob.completedDate || formatCurrentDateTime())
+        : undefined;
+
       const updated: ModifyJob = {
         ...editingJob,
         ...jobData,
+        completedDate: autoCompletedDate,
         attachments: shouldClearAttachments ? [] : (jobData.attachments ?? editingJob.attachments ?? []),
         updatedAt: now,
       };
@@ -197,8 +214,14 @@ export default function App() {
       // Create new with robust unique ID
       const newId = `job_${jobData.category}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
       const shouldClearAttachments = jobData.status === 'เสร็จสิ้น';
+      const isFinishing = jobData.status === 'เสร็จสิ้น';
+      const autoCompletedDate = isFinishing 
+        ? (jobData.completedDate || formatCurrentDateTime())
+        : undefined;
+
       const newJob: ModifyJob = {
         ...jobData,
+        completedDate: autoCompletedDate,
         attachments: shouldClearAttachments ? [] : (jobData.attachments ?? []),
         id: newId,
         createdBy: user?.uid,
@@ -229,13 +252,16 @@ export default function App() {
   const handleStatusChange = async (jobId: string, newStatus: JobStatus) => {
     const now = new Date().toISOString();
     const shouldClearAttachments = newStatus === 'เสร็จสิ้น';
+    const completionTimestamp = newStatus === 'เสร็จสิ้น' ? formatCurrentDateTime() : undefined;
 
     setJobs((prev) =>
       prev.map((j) => {
         if (j.id === jobId) {
+          const finalCompletedDate = newStatus === 'เสร็จสิ้น' ? (j.completedDate || completionTimestamp) : undefined;
           return {
             ...j,
             status: newStatus,
+            completedDate: finalCompletedDate,
             attachments: shouldClearAttachments ? [] : j.attachments,
             updatedAt: now,
           };
@@ -245,7 +271,13 @@ export default function App() {
     );
 
     try {
-      const updateData: any = { status: newStatus, updatedAt: now };
+      const existingJob = jobs.find(j => j.id === jobId);
+      const finalCompletedDate = newStatus === 'เสร็จสิ้น' ? (existingJob?.completedDate || completionTimestamp) : null;
+      const updateData: any = { 
+        status: newStatus, 
+        completedDate: finalCompletedDate,
+        updatedAt: now 
+      };
       if (shouldClearAttachments) {
         updateData.attachments = [];
       }
@@ -367,7 +399,7 @@ export default function App() {
         onOpenNewJob={() => {
           setEditingJob(null);
           setNewJobPrefillData(null);
-          setNewJobInitialCat(activeView === 'cost_summary' || activeView === 'calendar' ? 'modify_general' : activeView);
+          setNewJobInitialCat(activeView === 'cost_summary' || activeView === 'calendar' || activeView === 'job_queue' ? 'modify_general' : activeView);
           setIsNewJobModalOpen(true);
         }}
         onOpenAlerts={() => setIsAlertsModalOpen(true)}
@@ -390,7 +422,7 @@ export default function App() {
           onOpenNewJob={() => {
             setEditingJob(null);
             setNewJobPrefillData(null);
-            setNewJobInitialCat(activeView === 'cost_summary' || activeView === 'calendar' ? 'modify_general' : activeView);
+            setNewJobInitialCat(activeView === 'cost_summary' || activeView === 'calendar' || activeView === 'job_queue' ? 'modify_general' : activeView);
             setIsNewJobModalOpen(true);
           }}
           onOpenLeadTimeCalculator={handleOpenLeadTimeCalculator}
@@ -400,7 +432,23 @@ export default function App() {
 
         {/* Dynamic Full-Size Viewport */}
         <main className="flex-1 flex flex-col overflow-hidden bg-slate-950 min-h-[calc(100vh-4rem)]">
-          {activeView === 'calendar' ? (
+          {activeView === 'job_queue' ? (
+            <JobQueueView
+              jobs={displayedJobs}
+              urgentAlerts={urgentAlerts}
+              onViewJob={setViewingJob}
+              onEditJob={handleEditJob}
+              onDeleteJob={handleDeleteJob}
+              onStatusChange={handleStatusChange}
+              onOpenNewJob={() => {
+                setEditingJob(null);
+                setNewJobPrefillData(null);
+                setNewJobInitialCat('modify_general');
+                setIsNewJobModalOpen(true);
+              }}
+              onOpenSheetsSync={() => setIsSheetsModalOpen(true)}
+            />
+          ) : activeView === 'calendar' ? (
             <CalendarView
               jobs={displayedJobs}
               urgentAlerts={urgentAlerts}

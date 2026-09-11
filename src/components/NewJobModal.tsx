@@ -280,6 +280,20 @@ export const NewJobModal: React.FC<NewJobModalProps> = ({
     // Rule: Clear attachments if status is Finish ('เสร็จสิ้น')
     const finalAttachments = status === 'เสร็จสิ้น' ? [] : attachments;
 
+    const getAutoCompletedDateTime = (): string => {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      const hh = String(now.getHours()).padStart(2, '0');
+      const min = String(now.getMinutes()).padStart(2, '0');
+      return `${y}-${m}-${d} ${hh}:${min}`;
+    };
+
+    const finalCompletedDate = status === 'เสร็จสิ้น' 
+      ? (editingJob?.completedDate || getAutoCompletedDateTime())
+      : undefined;
+
     onSaveJob({
       seqNo: Number(seqNo) || 1,
       ecrNo: ecrNo.trim(),
@@ -295,6 +309,7 @@ export const NewJobModal: React.FC<NewJobModalProps> = ({
       shipmentDate,
       estimatedDate: estimatedDate || shipmentDate,
       status,
+      completedDate: finalCompletedDate,
       technician,
       category,
       laborCost: Number(laborCost || 0),

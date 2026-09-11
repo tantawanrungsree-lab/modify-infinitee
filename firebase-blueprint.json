@@ -19,6 +19,7 @@
         "receivedDate": { "type": "string", "description": "วันที่รับงาน Received date (YYYY-MM-DD)" },
         "shipmentDate": { "type": "string", "description": "Shipment date (YYYY-MM-DD)" },
         "estimatedDate": { "type": "string", "description": "วันที่ประมาณการ Estimated date (YYYY-MM-DD)" },
+        "completedDate": { "type": "string", "description": "วันที่และเวลาเสร็จสิ้น Completion datetime recorded automatically when status is เสร็จสิ้น" },
         "status": { "type": "string", "description": "Status งาน Job status: 'รอดำเนินการ' | 'กำลังดำเนินการ' | 'รอตรวจรับ' | 'เสร็จสิ้น' | 'ยกเลิก'" },
         "technician": { "type": "string", "description": "ช่างที่ทำ / ช่างผู้รับผิดชอบ Assigned technician" },
         "category": { "type": "string", "description": "ประเภทงาน: 'modify_general' | 'paint' | 'custom_fabrication'" },

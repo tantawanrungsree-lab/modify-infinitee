@@ -215,20 +215,46 @@ Project Code: ${job.projectCode} | Project Name: ${job.projectName}
           </div>
 
           {/* Timeline & Dates */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-xl bg-slate-850 border border-slate-750 text-xs font-mono">
-            <div>
-              <span className="text-slate-400 block">วันที่รับงาน</span>
-              <span className="text-sm text-slate-200 font-semibold">{job.receivedDate}</span>
-            </div>
-            <div>
-              <span className="text-slate-400 block">Shipment Date</span>
-              <span className="text-sm text-amber-400 font-bold">{job.shipmentDate}</span>
-            </div>
-            <div>
-              <span className="text-slate-400 block">วันที่ประมาณการ</span>
-              <span className="text-sm text-slate-200 font-semibold">{job.estimatedDate || '-'}</span>
-            </div>
-          </div>
+          {(() => {
+            let daysUsed: number | null = null;
+            if (job.receivedDate) {
+              const comp = job.completedDate || (job.status === 'เสร็จสิ้น' ? job.updatedAt : undefined);
+              if (comp) {
+                const recStr = job.receivedDate.split(' ')[0].split('T')[0];
+                const compStr = comp.split(' ')[0].split('T')[0];
+                const dRec = new Date(recStr);
+                const dComp = new Date(compStr);
+                if (!isNaN(dRec.getTime()) && !isNaN(dComp.getTime())) {
+                  daysUsed = Math.max(0, Math.round((dComp.getTime() - dRec.getTime()) / (1000 * 60 * 60 * 24)));
+                }
+              }
+            }
+
+            return (
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 p-4 rounded-xl bg-slate-850 border border-slate-750 text-xs font-mono">
+                <div>
+                  <span className="text-slate-400 block">วันที่รับงาน</span>
+                  <span className="text-sm text-slate-200 font-semibold">{job.receivedDate}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block">Shipment Date</span>
+                  <span className="text-sm text-amber-400 font-bold">{job.shipmentDate}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block">วันที่ประมาณการ</span>
+                  <span className="text-sm text-slate-200 font-semibold">{job.estimatedDate || '-'}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block">วันที่เสร็จสิ้น</span>
+                  <span className="text-sm text-emerald-400 font-bold">{job.completedDate || (job.status === 'เสร็จสิ้น' ? 'เสร็จสิ้นแล้ว' : '-')}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block">จำนวนวันที่ใช้</span>
+                  <span className="text-sm text-cyan-400 font-bold">{daysUsed !== null ? `${daysUsed} วัน` : '-'}</span>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Financials Breakdown */}
           <div className="p-4 rounded-xl bg-slate-850 border border-slate-750 flex flex-col sm:flex-row sm:items-center justify-between gap-3">

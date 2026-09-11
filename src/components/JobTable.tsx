@@ -56,8 +56,25 @@ export const JobTable: React.FC<JobTableProps> = ({
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [technicianFilter, setTechnicianFilter] = useState<string>('all');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const [sortField, setSortField] = useState<keyof ModifyJob>('seqNo');
+  type ExtendedSortField = keyof ModifyJob | 'daysUsed';
+  const [sortField, setSortField] = useState<ExtendedSortField>('seqNo');
   const [sortAsc, setSortAsc] = useState<boolean>(true);
+
+  // Helper to calculate days used: completedDate - receivedDate
+  const getDaysUsed = (job: ModifyJob): number | null => {
+    if (!job.receivedDate) return null;
+    const completed = job.completedDate || (job.status === 'เสร็จสิ้น' ? job.updatedAt : undefined);
+    if (!completed) return null;
+    
+    const recStr = job.receivedDate.split(' ')[0].split('T')[0];
+    const compStr = completed.split(' ')[0].split('T')[0];
+    const dRec = new Date(recStr);
+    const dComp = new Date(compStr);
+    if (isNaN(dRec.getTime()) || isNaN(dComp.getTime())) return null;
+    
+    const diffDays = Math.round((dComp.getTime() - dRec.getTime()) / (1000 * 60 * 60 * 24));
+    return Math.max(0, diffDays);
+  };
 
   // Active attachments viewer state
   const [viewingAttachmentJob, setViewingAttachmentJob] = useState<ModifyJob | null>(null);
@@ -91,6 +108,15 @@ export const JobTable: React.FC<JobTableProps> = ({
 
   // Sort logic
   const sortedJobs = [...filteredJobs].sort((a, b) => {
+    if (sortField === 'daysUsed') {
+      const daysA = getDaysUsed(a);
+      const daysB = getDaysUsed(b);
+      const valA = daysA !== null ? daysA : -999999;
+      const valB = daysB !== null ? daysB : -999999;
+      if (valA < valB) return sortAsc ? -1 : 1;
+      if (valA > valB) return sortAsc ? 1 : -1;
+      return 0;
+    }
     const valA = a[sortField] ?? '';
     const valB = b[sortField] ?? '';
     if (valA < valB) return sortAsc ? -1 : 1;
@@ -98,7 +124,7 @@ export const JobTable: React.FC<JobTableProps> = ({
     return 0;
   });
 
-  const handleSort = (field: keyof ModifyJob) => {
+  const handleSort = (field: ExtendedSortField) => {
     if (sortField === field) {
       setSortAsc(!sortAsc);
     } else {
@@ -241,7 +267,7 @@ export const JobTable: React.FC<JobTableProps> = ({
       {/* Main Responsive Industrial Data Table */}
       <div className="flex-1 bg-slate-900/90 rounded-xl border border-slate-800 overflow-hidden flex flex-col shadow-inner">
         <div className="overflow-x-auto overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-slate-700">
-          <table className="w-full text-left border-collapse min-w-[1500px]">
+          <table className="w-full text-left border-collapse min-w-[1700px]">
             <thead className="bg-slate-850/90 sticky top-0 z-10 border-b border-slate-750 text-[11px] font-bold text-slate-300 uppercase tracking-wider select-none">
               <tr>
                 <th className="py-3 px-3 w-14 text-center cursor-pointer hover:bg-slate-800" onClick={() => handleSort('seqNo')}>
@@ -310,6 +336,18 @@ export const JobTable: React.FC<JobTableProps> = ({
                 <th className="py-3 px-3 w-32 cursor-pointer hover:bg-slate-800" onClick={() => handleSort('estimatedDate')}>
                   <span>วันที่ประมาณการ</span>
                 </th>
+                <th className="py-3 px-3 w-36 cursor-pointer hover:bg-slate-800" onClick={() => handleSort('completedDate')}>
+                  <div className="flex items-center gap-1 text-emerald-400 font-bold">
+                    <span>วันที่เสร็จสิ้น</span>
+                    <ArrowUpDown className="w-3 h-3 text-emerald-400" />
+                  </div>
+                </th>
+                <th className="py-3 px-3 w-28 text-center cursor-pointer hover:bg-slate-800" onClick={() => handleSort('daysUsed')}>
+                  <div className="flex items-center justify-center gap-1 text-cyan-300 font-bold">
+                    <span>จำนวนวันที่ใช้</span>
+                    <ArrowUpDown className="w-3 h-3 text-cyan-400" />
+                  </div>
+                </th>
                 <th className="py-3 px-3 w-36 cursor-pointer hover:bg-slate-800" onClick={() => handleSort('status')}>
                   <div className="flex items-center gap-1">
                     <span>Status งาน</span>
@@ -330,7 +368,7 @@ export const JobTable: React.FC<JobTableProps> = ({
             <tbody className="divide-y divide-slate-800 text-xs text-slate-200">
               {sortedJobs.length === 0 ? (
                 <tr>
-                  <td colSpan={17} className="py-12 text-center text-slate-400">
+                  <td colSpan={19} className="py-12 text-center text-slate-400">
                     <div className="max-w-xs mx-auto space-y-2">
                       <FileText className="w-8 h-8 text-slate-400 mx-auto" />
                       <div className="font-semibold text-slate-300">ไม่พบข้อมูลในตารางนี้</div>
@@ -344,6 +382,7 @@ export const JobTable: React.FC<JobTableProps> = ({
                   const isUrgent = alert?.isUrgent1Day;
                   const isOverdue = alert?.isOverdue;
                   const hasAttachments = job.attachments && job.attachments.length > 0;
+                  const daysUsed = getDaysUsed(job);
 
                   return (
                     <tr 
@@ -493,6 +532,29 @@ export const JobTable: React.FC<JobTableProps> = ({
                       {/* วันที่ประมาณการ */}
                       <td className="py-3 px-3 text-slate-400 font-mono text-[11px]">
                         {job.estimatedDate || '-'}
+                      </td>
+
+                      {/* วันที่เสร็จสิ้น (Completed Date / Time) */}
+                      <td className="py-3 px-3">
+                        {job.status === 'เสร็จสิ้น' || job.completedDate ? (
+                          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md font-mono text-[11px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 whitespace-nowrap shadow-sm">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                            <span>{job.completedDate || job.updatedAt?.replace('T', ' ').substring(0, 16) || '-'}</span>
+                          </div>
+                        ) : (
+                          <span className="text-slate-500 text-xs font-mono">-</span>
+                        )}
+                      </td>
+
+                      {/* จำนวนวันที่ใช้ (วันที่เสร็จสิ้น - วันที่รับงาน) */}
+                      <td className="py-3 px-3 text-center">
+                        {daysUsed !== null ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md font-mono font-bold text-xs bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 whitespace-nowrap shadow-sm">
+                            {daysUsed} วัน
+                          </span>
+                        ) : (
+                          <span className="text-slate-500 text-xs font-mono">-</span>
+                        )}
                       </td>
 
                       {/* Status งาน */}
